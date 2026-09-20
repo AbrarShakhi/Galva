@@ -7,10 +7,23 @@ import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
-enum class ChromeLayout { BottomBar, Rail }
+/**
+ * Where the tab navigation belongs for the current window.
+ *
+ * A bottom bar costs the same ~70dp whatever the window is. That is a fair price in portrait and a
+ * bad one in landscape, where it plus the app bar can take over a third of the height and leave a
+ * gallery showing barely a row of photos. On a short or wide window the navigation moves to the
+ * leading edge instead, where the space it takes is the space there is most of.
+ */
+enum class ChromeLayout {
+    BottomBar,
+    Rail,
+}
 
 fun chromeLayoutFor(windowWidth: Dp, windowHeight: Dp): ChromeLayout = when {
+    // Wide enough that a full-width bottom bar would strand its tabs in the middle of nowhere.
     windowWidth >= ExpandedWidth -> ChromeLayout.Rail
+    // Short and landscape: vertical space is the scarce one.
     windowHeight < CompactHeight && windowWidth > windowHeight -> ChromeLayout.Rail
     else -> ChromeLayout.BottomBar
 }

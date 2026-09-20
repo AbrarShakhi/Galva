@@ -34,6 +34,7 @@ sealed interface GalleryIntent : UiIntent {
 
     data class MediaLongPressed(val item: MediaItem) : GalleryIntent
 
+    /** Tapping a day header selects or clears that whole day. */
     data class SectionTapped(val section: TimelineSection) : GalleryIntent
 
     data object SelectAll : GalleryIntent
@@ -52,6 +53,7 @@ sealed interface GalleryIntent : UiIntent {
 
     data class AddedToAlbum(val albumName: String) : GalleryIntent
 
+    /** Reported back by the UI once the system delete dialog has been answered. */
     data class DeleteResolved(val ids: List<Long>, val confirmed: Boolean) : GalleryIntent
 }
 

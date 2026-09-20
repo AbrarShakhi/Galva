@@ -72,6 +72,12 @@ private val Tabs = listOf(
     TabSpec(AppRouteKey.Search, "Search", Icons.Filled.Search, Icons.Outlined.Search),
 )
 
+/**
+ * Tab navigation, in whichever form the window calls for.
+ *
+ * Feature chrome asks for "the navigation" and this picks the shape, so adding a destination or
+ * restyling the selected state happens once rather than once per layout.
+ */
 @Composable
 fun AppTabs(
     layout: ChromeLayout,
@@ -85,6 +91,16 @@ fun AppTabs(
     }
 }
 
+/**
+ * Ente's navigation bar: tabs sit centred on a flat fill and the active one wears a pill.
+ *
+ * Only the selected tab carries a label. The unselected tabs stay icon-only, so the bar reads as a
+ * row of glyphs with one of them named — the width the label needs is animated in rather than
+ * reserved, which is why the tabs slide as the selection moves.
+ *
+ * Ente itself sets `text: ''` on every tab, making its pills icon-only; showing the active label is
+ * a deliberate departure. Dropping `PillLabel` restores Ente's exact behaviour.
+ */
 @Composable
 private fun AppBottomBar(
     current: AppRouteKey?,
@@ -121,6 +137,13 @@ private fun AppBottomBar(
     }
 }
 
+/**
+ * The same tabs stacked on the leading edge, where a landscape window has width to spare and no
+ * height to lose.
+ *
+ * The label sits under its icon rather than beside it: a pill wide enough for "Albums" alongside
+ * the glyph would force the rail wide enough to eat the space it exists to save.
+ */
 @Composable
 private fun AppNavigationRail(
     current: AppRouteKey?,
@@ -222,12 +245,10 @@ private fun RailPill(
         PillIcon(tab = tab, selected = selected, tint = contentColor)
         AnimatedVisibility(
             visible = selected,
-            enter = expandVertically(tween(NavTransitionMillis, easing = EaseOutExpo)) + fadeIn(
-                tween(NavTransitionMillis, easing = EaseOutExpo)
-            ),
-            exit = shrinkVertically(tween(NavTransitionMillis, easing = EaseOutExpo)) + fadeOut(
-                tween(NavTransitionMillis, easing = EaseOutExpo)
-            ),
+            enter = expandVertically(tween(NavTransitionMillis, easing = EaseOutExpo)) +
+                fadeIn(tween(NavTransitionMillis, easing = EaseOutExpo)),
+            exit = shrinkVertically(tween(NavTransitionMillis, easing = EaseOutExpo)) +
+                fadeOut(tween(NavTransitionMillis, easing = EaseOutExpo)),
         ) {
             Text(
                 text = tab.label,
@@ -241,6 +262,10 @@ private fun RailPill(
     }
 }
 
+/**
+ * The outline and filled glyphs cross-fade rather than swapping, and the icon settles with a spring
+ * so the selection lands with a little weight instead of snapping.
+ */
 @Composable
 private fun PillIcon(tab: TabSpec, selected: Boolean, tint: Color) {
     val scale by animateFloatAsState(

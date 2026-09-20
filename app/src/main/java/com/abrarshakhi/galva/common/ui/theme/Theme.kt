@@ -5,6 +5,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 
 private val GalvaDarkColors = darkColorScheme(
     primary = GalvaGreen,
@@ -62,14 +63,20 @@ private val GalvaLightColors = lightColorScheme(
     onError = Paper,
 )
 
+/**
+ * Dynamic colour is intentionally not offered: wallpaper-derived hues would tint the chrome
+ * surrounding the user's photos and shift the meaning of the green selection accent.
+ */
 @Composable
 fun GalvaTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit,
 ) {
-    MaterialTheme(
-        colorScheme = if (darkTheme) GalvaDarkColors else GalvaLightColors,
-        typography = Typography,
-        content = content,
-    )
+    CompositionLocalProvider(LocalGalvaPalette provides galvaPaletteFor(darkTheme)) {
+        MaterialTheme(
+            colorScheme = if (darkTheme) GalvaDarkColors else GalvaLightColors,
+            typography = Typography,
+            content = content,
+        )
+    }
 }

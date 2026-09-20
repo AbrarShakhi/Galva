@@ -2,6 +2,12 @@ package com.abrarshakhi.galva.common.ui.selection
 
 import androidx.compose.runtime.Immutable
 
+/**
+ * Multi-select state shared by every grid surface.
+ *
+ * Immutable and id-based: the selection survives the list being re-emitted by the database, which
+ * a selection of item references would not.
+ */
 @Immutable
 data class SelectionState(
     val selectedIds: Set<Long> = emptySet(),

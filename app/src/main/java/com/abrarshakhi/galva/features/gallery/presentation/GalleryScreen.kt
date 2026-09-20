@@ -16,13 +16,13 @@ import com.abrarshakhi.galva.common.mvi.CollectEffects
 import com.abrarshakhi.galva.common.ui.appViewModel
 import com.abrarshakhi.galva.common.ui.component.EmptyState
 import com.abrarshakhi.galva.common.ui.component.TimelineGrid
-import com.abrarshakhi.galva.common.ui.selection.selectedBy
 import com.abrarshakhi.galva.common.ui.snackbar.SnackbarDispatcher
+import com.abrarshakhi.galva.common.ui.selection.selectedBy
 import com.abrarshakhi.galva.core.media.domain.model.MediaItem
 import com.abrarshakhi.galva.core.media.domain.model.MediaSource
+import com.abrarshakhi.galva.features.albums.presentation.AddToAlbumSheet
 import com.abrarshakhi.galva.core.media.ui.rememberMediaDeleteLauncher
 import com.abrarshakhi.galva.core.share.MediaSharing
-import com.abrarshakhi.galva.features.albums.presentation.AddToAlbumSheet
 import org.koin.compose.koinInject
 
 @Composable
@@ -43,8 +43,9 @@ fun GalleryScreen(
         when (effect) {
             is GalleryEffect.OpenViewer -> onOpenViewer(effect.source, effect.mediaId)
 
-            is GalleryEffect.ShareItems -> MediaSharing.chooserFor(effect.uris, effect.mimeTypes)
-                ?.let(context::startActivity)
+            is GalleryEffect.ShareItems ->
+                MediaSharing.chooserFor(effect.uris, effect.mimeTypes)
+                    ?.let(context::startActivity)
 
             is GalleryEffect.ConfirmDelete -> deleteLauncher.request(effect.ids, effect.uris)
 

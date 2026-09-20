@@ -1,9 +1,7 @@
 package com.abrarshakhi.galva.common.main
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
@@ -27,17 +25,28 @@ import com.abrarshakhi.galva.common.navigation.currentRoute
 import com.abrarshakhi.galva.common.navigation.isTopLevel
 import com.abrarshakhi.galva.common.navigation.rememberAppBackStack
 import com.abrarshakhi.galva.common.navigation.switchTabTo
-import com.abrarshakhi.galva.common.ui.snackbar.SnackbarDispatcher
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
+import com.abrarshakhi.galva.common.ui.component.MediaPermissionGate
 import com.abrarshakhi.galva.common.ui.util.ChromeLayout
 import com.abrarshakhi.galva.common.ui.util.rememberChromeLayout
+import com.abrarshakhi.galva.common.ui.snackbar.SnackbarDispatcher
+import com.abrarshakhi.galva.features.settings.presentation.SettingsDrawerContent
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
 @Composable
 fun AppRoot(startRoute: AppRouteKey, mainAppViewModel: MainAppViewModel) {
-    AppShell(startRoute = startRoute)
+    MediaPermissionGate(onAccessChanged = mainAppViewModel::onAccessChanged) {
+        AppShell(startRoute = startRoute)
+    }
 }
 
+/**
+ * Owns the single Scaffold every screen shares: one drawer, one snackbar host, one scroll
+ * behaviour. Screens contribute their bars through [ScreenChrome] rather than nesting Scaffolds,
+ * which is what keeps the bottom bar from re-animating on every navigation.
+ */
 @Composable
 private fun AppShell(startRoute: AppRouteKey) {
     val backStack = rememberAppBackStack(startRoute)
@@ -65,6 +74,7 @@ private fun AppShell(startRoute: AppRouteKey) {
         coroutineScope.launch { drawerState.close() }
     }
 
+    // From a secondary tab, back returns to the timeline instead of leaving the app.
     BackHandler(enabled = !drawerState.isOpen && current != null && current.isTopLevel && current != AppRouteKey.Gallery) {
         backStack.switchTabTo(AppRouteKey.Gallery)
     }
@@ -86,7 +96,7 @@ private fun AppShell(startRoute: AppRouteKey) {
     ModalNavigationDrawer(
         drawerState = drawerState,
         gesturesEnabled = current == AppRouteKey.Gallery || drawerState.isOpen,
-        drawerContent = { },
+        drawerContent = { SettingsDrawerContent() },
     ) {
         Scaffold(
             modifier = Modifier
@@ -101,11 +111,12 @@ private fun AppShell(startRoute: AppRouteKey) {
             floatingActionButton = { chrome?.fab?.invoke(chromeScope) },
         ) { innerPadding ->
             val immersive = chrome?.immersive == true
-            val contentModifier = if (immersive) Modifier.fillMaxSize() else Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
+            val contentModifier =
+                if (immersive) Modifier.fillMaxSize() else Modifier.fillMaxSize().padding(innerPadding)
 
             if (layout == ChromeLayout.Rail && !immersive) {
+                // The rail sits beside the content rather than above it, so the top app bar keeps
+                // the full width and only the navigation moves.
                 Row(modifier = contentModifier) {
                     chrome?.navigation?.invoke(chromeScope)
                     AppNavigation(

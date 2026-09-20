@@ -12,6 +12,14 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+/**
+ * Base for the unidirectional loop every screen follows.
+ *
+ * Intents arrive on an unbounded channel and are handled one at a time, so a reducer never
+ * observes a half-applied state from a concurrent intent. State is a [StateFlow] because it is a
+ * value the UI re-reads on every recomposition; effects are a [Channel] because they must fire
+ * exactly once and must not survive a configuration change.
+ */
 abstract class MviViewModel<S : UiState, I : UiIntent, E : UiEffect>(
     initialState: S,
 ) : ViewModel() {
@@ -24,6 +32,7 @@ abstract class MviViewModel<S : UiState, I : UiIntent, E : UiEffect>(
 
     private val intents = Channel<I>(Channel.UNLIMITED)
 
+    /** Current state, for reducers that need to read before they write. */
     protected val currentState: S get() = _state.value
 
     init {

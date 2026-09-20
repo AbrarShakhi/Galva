@@ -3,11 +3,14 @@ package com.abrarshakhi.galva.common.ui.util
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalLocale
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
+/**
+ * Formats timeline section headers the way a gallery reads them: relative for the last two days,
+ * then day-and-month, with the year only once it stops being obvious.
+ */
 class TimelineDateFormatter(
     locale: Locale,
     private val today: () -> LocalDate = LocalDate::now,
@@ -28,10 +31,11 @@ class TimelineDateFormatter(
 @Composable
 fun rememberTimelineDateFormatter(): TimelineDateFormatter {
     val configuration = LocalConfiguration.current
-    val locale = configuration.locales[0] ?: LocalLocale.current.platformLocale
+    val locale = configuration.locales[0] ?: Locale.getDefault()
     return remember(locale) { TimelineDateFormatter(locale) }
 }
 
+/** `1:23` / `1:02:03`, the compact form used on video thumbnails. */
 fun formatDuration(durationMs: Long): String {
     val totalSeconds = (durationMs / 1_000L).coerceAtLeast(0L)
     val hours = totalSeconds / 3_600

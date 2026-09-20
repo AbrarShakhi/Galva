@@ -15,9 +15,12 @@ data class AppSettings(
 }
 
 enum class ThemeMode {
-    SYSTEM, LIGHT, DARK,
+    SYSTEM,
+    LIGHT,
+    DARK,
 }
 
 enum class AlbumViewType {
-    GRID, LIST,
+    GRID,
+    LIST,
 }

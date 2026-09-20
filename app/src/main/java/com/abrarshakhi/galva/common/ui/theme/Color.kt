@@ -2,12 +2,21 @@ package com.abrarshakhi.galva.common.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
+/**
+ * A fixed, dark-first palette rather than Material's default purple or a dynamic one.
+ *
+ * A gallery is a canvas: the chrome recedes to near-black or near-white so that nothing tints the
+ * user's photos, and a single green accent carries selection and emphasis.
+ */
 
 internal val GalvaGreen = Color(0xFF1DB954)
 internal val GalvaGreenDark = Color(0xFF0E8C3C)
 internal val GalvaGreenContainer = Color(0xFF12331F)
 internal val GalvaGreenContainerLight = Color(0xFFD4F3DF)
 
+// Container ladder. Material expects each step to be distinct — a higher container reads as more
+// elevated, lighter in dark and darker in light. Collapsing two steps onto one colour makes the
+// role a caller picks meaningless.
 internal val Ink = Color(0xFF000000)
 internal val InkLow = Color(0xFF141414)
 internal val InkElevated = Color(0xFF1B1B1B)

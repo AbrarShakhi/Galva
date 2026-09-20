@@ -26,7 +26,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -35,7 +34,14 @@ import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.abrarshakhi.galva.common.ui.util.formatDuration
 import com.abrarshakhi.galva.core.media.domain.model.MediaItem
+import androidx.compose.ui.platform.LocalContext
 
+/**
+ * One cell of the photo wall.
+ *
+ * Selection is shown by insetting the image rather than drawing a border on top of it, so the
+ * check mark and the surface behind it stay visible against any photo.
+ */
 @Composable
 fun MediaThumbnail(
     item: MediaItem,
@@ -61,7 +67,9 @@ fun MediaThumbnail(
             .semantics { contentDescription = item.displayName },
     ) {
         AsyncImage(
-            model = ImageRequest.Builder(LocalContext.current).data(item.uri).crossfade(true)
+            model = ImageRequest.Builder(LocalContext.current)
+                .data(item.uri)
+                .crossfade(true)
                 .build(),
             contentDescription = null,
             contentScale = ContentScale.Crop,

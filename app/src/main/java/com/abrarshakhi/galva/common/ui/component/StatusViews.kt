@@ -21,44 +21,46 @@ import com.abrarshakhi.galva.common.ui.theme.GalvaDimens
 
 @Composable
 fun EmptyState(
-    modifier: Modifier = Modifier,
     icon: ImageVector,
     title: String,
     message: String? = null,
+    modifier: Modifier = Modifier,
 ) {
+    // A short landscape viewport can be smaller than this message. Scrolling the inner column
+    // keeps it readable there while it still centres whenever it fits.
     Box(
         modifier = modifier.fillMaxSize(),
         contentAlignment = Alignment.Center,
     ) {
-        Column(
-            modifier = Modifier
-                .verticalScroll(rememberScrollState())
-                .padding(GalvaDimens.ScreenPadding),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(48.dp),
-            )
+    Column(
+        modifier = Modifier
+            .verticalScroll(rememberScrollState())
+            .padding(GalvaDimens.ScreenPadding),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(48.dp),
+        )
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(top = GalvaDimens.ItemSpacing),
+        )
+        if (message != null) {
             Text(
-                text = title,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface,
+                text = message,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.padding(top = GalvaDimens.ItemSpacing),
+                modifier = Modifier.padding(top = 6.dp),
             )
-            if (message != null) {
-                Text(
-                    text = message,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(top = 6.dp),
-                )
-            }
         }
+    }
     }
 }

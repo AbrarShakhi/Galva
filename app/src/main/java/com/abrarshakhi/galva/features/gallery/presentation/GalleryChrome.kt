@@ -1,7 +1,7 @@
 package com.abrarshakhi.galva.features.gallery.presentation
 
-import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -22,6 +22,12 @@ import com.abrarshakhi.galva.common.ui.component.SelectionActions
 import com.abrarshakhi.galva.common.ui.component.SelectionTopBar
 import com.abrarshakhi.galva.common.ui.selection.selectedBy
 
+/**
+ * Chrome for the Home tab.
+ *
+ * Both bars swap wholesale once a selection exists — the same trade Ente makes — so the actions
+ * that apply to the selection sit where the navigation was, within thumb reach.
+ */
 fun galleryChrome(): ScreenChrome = ScreenChrome(
     topBar = { scope ->
         val viewModel: GalleryViewModel = appViewModel()

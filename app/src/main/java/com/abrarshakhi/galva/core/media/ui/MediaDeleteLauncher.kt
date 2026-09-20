@@ -18,6 +18,14 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+/**
+ * Owns the system consent dialog required to delete media the app does not own.
+ *
+ * This is deliberately UI-layer code: the confirmation is an Activity result, so no repository or
+ * ViewModel can drive it. The two OS paths — `createDeleteRequest` on API 30+, a recoverable
+ * `SecurityException` on API 29 — are collapsed behind [request] so callers only deal with a
+ * confirmed/denied answer.
+ */
 class MediaDeleteLauncher internal constructor(
     private val context: Context,
     private val scope: CoroutineScope,
@@ -42,6 +50,8 @@ class MediaDeleteLauncher internal constructor(
             return
         }
 
+        // API 29: deleting is attempted directly and only the items the app does not own raise a
+        // recoverable exception carrying the consent dialog to show.
         scope.launch {
             val recovery = withContext(Dispatchers.IO) {
                 runCatching {
@@ -67,6 +77,10 @@ class MediaDeleteLauncher internal constructor(
     }
 }
 
+/**
+ * @param onResult receives whether the user confirmed, and the ids the request was made for, so
+ * the caller can prune its index and clear selection only on success.
+ */
 @Composable
 fun rememberMediaDeleteLauncher(
     onResult: (confirmed: Boolean, ids: List<Long>) -> Unit,
@@ -75,6 +89,8 @@ fun rememberMediaDeleteLauncher(
     val scope = rememberCoroutineScope()
     val currentOnResult = rememberUpdatedState(onResult)
 
+    // Holder breaks the cycle between the launcher (needed to build the object) and the object
+    // (needed to interpret the result).
     val holder = remember { arrayOfNulls<MediaDeleteLauncher>(1) }
 
     val consentLauncher = rememberLauncherForActivityResult(

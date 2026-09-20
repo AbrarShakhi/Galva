@@ -27,6 +27,12 @@ import com.abrarshakhi.galva.common.ui.util.rememberTimelineDateFormatter
 import com.abrarshakhi.galva.core.media.domain.model.MediaItem
 import com.abrarshakhi.galva.core.media.domain.model.TimelineSection
 
+/**
+ * The day-grouped photo wall.
+ *
+ * Headers are full-width grid items rather than sticky ones: with day sections this dense a pinned
+ * header spends most of its life covering the row directly beneath it.
+ */
 @Composable
 fun TimelineGrid(
     sections: List<TimelineSection>,
@@ -41,6 +47,9 @@ fun TimelineGrid(
 ) {
     val dateFormatter = rememberTimelineDateFormatter()
 
+    // The grid is a flat list of (header, cells...) per day, so the scrollbar's index has to be
+    // walked back to a section. Bounds are precomputed once per section list rather than per drag
+    // frame.
     val labelForIndex: (Int) -> String = remember(sections, dateFormatter) {
         val sectionEnds = buildList {
             var cursor = 0
@@ -58,50 +67,50 @@ fun TimelineGrid(
     }
 
     BoxWithConstraints(modifier = modifier) {
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(adaptiveColumnCount(preferredColumns, maxWidth)),
-            state = state,
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = contentPadding,
-            horizontalArrangement = Arrangement.spacedBy(GalvaDimens.GridSpacing),
-            verticalArrangement = Arrangement.spacedBy(GalvaDimens.GridSpacing),
-        ) {
-            sections.forEach { section ->
-                item(
-                    key = "header-${section.date}",
-                    contentType = CONTENT_TYPE_HEADER,
-                    span = { GridItemSpan(maxLineSpan) },
-                ) {
-                    Text(
-                        text = dateFormatter.format(section.date),
-                        style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onHeaderClick(section) }
-                            .padding(
-                                start = GalvaDimens.ScreenPadding,
-                                end = GalvaDimens.ScreenPadding,
-                                top = GalvaDimens.SectionSpacing,
-                                bottom = 8.dp,
-                            ),
-                    )
-                }
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(adaptiveColumnCount(preferredColumns, maxWidth)),
+        state = state,
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = contentPadding,
+        horizontalArrangement = Arrangement.spacedBy(GalvaDimens.GridSpacing),
+        verticalArrangement = Arrangement.spacedBy(GalvaDimens.GridSpacing),
+    ) {
+        sections.forEach { section ->
+            item(
+                key = "header-${section.date}",
+                contentType = CONTENT_TYPE_HEADER,
+                span = { GridItemSpan(maxLineSpan) },
+            ) {
+                Text(
+                    text = dateFormatter.format(section.date),
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onHeaderClick(section) }
+                        .padding(
+                            start = GalvaDimens.ScreenPadding,
+                            end = GalvaDimens.ScreenPadding,
+                            top = GalvaDimens.SectionSpacing,
+                            bottom = 8.dp,
+                        ),
+                )
+            }
 
-                items(
-                    items = section.items,
-                    key = { it.id },
-                    contentType = { CONTENT_TYPE_MEDIA },
-                ) { item ->
-                    MediaThumbnail(
-                        item = item,
-                        isSelected = selection.contains(item.id),
-                        onClick = { onItemClick(item) },
-                        onLongClick = { onItemLongClick(item) },
-                    )
-                }
+            items(
+                items = section.items,
+                key = { it.id },
+                contentType = { CONTENT_TYPE_MEDIA },
+            ) { item ->
+                MediaThumbnail(
+                    item = item,
+                    isSelected = selection.contains(item.id),
+                    onClick = { onItemClick(item) },
+                    onLongClick = { onItemLongClick(item) },
+                )
             }
         }
+    }
 
         DraggableScrollbar(
             state = state,
@@ -111,6 +120,7 @@ fun TimelineGrid(
     }
 }
 
+/** Flat variant for result sets where date grouping adds noise rather than structure. */
 @Composable
 fun MediaGrid(
     items: List<MediaItem>,
@@ -123,27 +133,27 @@ fun MediaGrid(
     state: LazyGridState = rememberLazyGridState(),
 ) {
     BoxWithConstraints(modifier = modifier) {
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(adaptiveColumnCount(preferredColumns, maxWidth)),
-            state = state,
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = contentPadding,
-            horizontalArrangement = Arrangement.spacedBy(GalvaDimens.GridSpacing),
-            verticalArrangement = Arrangement.spacedBy(GalvaDimens.GridSpacing),
-        ) {
-            items(
-                items = items,
-                key = { it.id },
-                contentType = { CONTENT_TYPE_MEDIA },
-            ) { item ->
-                MediaThumbnail(
-                    item = item,
-                    isSelected = selection.contains(item.id),
-                    onClick = { onItemClick(item) },
-                    onLongClick = { onItemLongClick(item) },
-                )
-            }
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(adaptiveColumnCount(preferredColumns, maxWidth)),
+        state = state,
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = contentPadding,
+        horizontalArrangement = Arrangement.spacedBy(GalvaDimens.GridSpacing),
+        verticalArrangement = Arrangement.spacedBy(GalvaDimens.GridSpacing),
+    ) {
+        items(
+            items = items,
+            key = { it.id },
+            contentType = { CONTENT_TYPE_MEDIA },
+        ) { item ->
+            MediaThumbnail(
+                item = item,
+                isSelected = selection.contains(item.id),
+                onClick = { onItemClick(item) },
+                onLongClick = { onItemLongClick(item) },
+            )
         }
+    }
 
         DraggableScrollbar(
             state = state,

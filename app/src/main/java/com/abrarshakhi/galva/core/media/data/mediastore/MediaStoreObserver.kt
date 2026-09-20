@@ -12,6 +12,13 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.callbackFlow
 
+/**
+ * Emits whenever the device's photo or video collection changes.
+ *
+ * Both per-type collections are watched rather than `Files`: some OEM media scanners only notify
+ * the `Images`/`Video` URIs, so watching only the unified collection silently misses changes.
+ * Duplicate notifications are expected and harmless — the sync pass they trigger is a no-op diff.
+ */
 class MediaStoreObserver(
     private val context: Context,
 ) {
@@ -24,10 +31,7 @@ class MediaStoreObserver(
         }
         val resolver = context.contentResolver
         WATCHED_COLLECTIONS.forEach { collection ->
-            resolver.registerContentObserver(
-                collection, /* notifyForDescendants = */
-                true, observer
-            )
+            resolver.registerContentObserver(collection, /* notifyForDescendants = */ true, observer)
         }
         awaitClose { resolver.unregisterContentObserver(observer) }
     }.buffer(capacity = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)

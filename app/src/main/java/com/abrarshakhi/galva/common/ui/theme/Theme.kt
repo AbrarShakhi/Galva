@@ -1,57 +1,75 @@
 package com.abrarshakhi.galva.common.ui.theme
 
-import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalContext
 
-private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
+private val GalvaDarkColors = darkColorScheme(
+    primary = GalvaGreen,
+    onPrimary = Ink,
+    primaryContainer = GalvaGreenContainer,
+    onPrimaryContainer = GalvaGreen,
+    secondary = GalvaGreen,
+    onSecondary = Ink,
+    secondaryContainer = InkElevatedHighest,
+    onSecondaryContainer = TextOnInk,
+    tertiary = GalvaGreen,
+    onTertiary = Ink,
+    background = Ink,
+    onBackground = TextOnInk,
+    surface = Ink,
+    onSurface = TextOnInk,
+    surfaceVariant = InkElevated,
+    onSurfaceVariant = TextOnInkMuted,
+    surfaceContainerLowest = Ink,
+    surfaceContainerLow = InkLow,
+    surfaceContainer = InkElevated,
+    surfaceContainerHigh = InkElevatedHigh,
+    surfaceContainerHighest = InkElevatedHighest,
+    outline = InkOutline,
+    outlineVariant = InkElevatedHighest,
+    error = DangerRed,
+    onError = Ink,
 )
 
-private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
-
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
+private val GalvaLightColors = lightColorScheme(
+    primary = GalvaGreenDark,
+    onPrimary = Paper,
+    primaryContainer = GalvaGreenContainerLight,
+    onPrimaryContainer = GalvaGreenDark,
+    secondary = GalvaGreenDark,
+    onSecondary = Paper,
+    secondaryContainer = PaperElevatedHighest,
+    onSecondaryContainer = TextOnPaper,
+    tertiary = GalvaGreenDark,
+    onTertiary = Paper,
+    background = Paper,
+    onBackground = TextOnPaper,
+    surface = Paper,
+    onSurface = TextOnPaper,
+    surfaceVariant = PaperElevated,
+    onSurfaceVariant = TextOnPaperMuted,
+    surfaceContainerLowest = Paper,
+    surfaceContainerLow = PaperElevated,
+    surfaceContainer = PaperContainer,
+    surfaceContainerHigh = PaperElevatedHigh,
+    surfaceContainerHighest = PaperElevatedHighest,
+    outline = PaperOutline,
+    outlineVariant = PaperElevatedHighest,
+    error = DangerRed,
+    onError = Paper,
 )
 
 @Composable
 fun GalvaTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
-
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
-    }
-
     MaterialTheme(
-        colorScheme = colorScheme,
+        colorScheme = if (darkTheme) GalvaDarkColors else GalvaLightColors,
         typography = Typography,
-        content = content
+        content = content,
     )
 }

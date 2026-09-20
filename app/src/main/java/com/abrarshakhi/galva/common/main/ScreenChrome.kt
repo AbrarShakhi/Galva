@@ -4,6 +4,7 @@ import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import com.abrarshakhi.galva.common.navigation.AppRouteKey
+import com.abrarshakhi.galva.common.ui.util.ChromeLayout
 
 data class ChromeScope(
     val backStack: SnapshotStateList<AppRouteKey>,
@@ -11,6 +12,7 @@ data class ChromeScope(
     val scrollBehavior: TopAppBarScrollBehavior,
     val openDrawer: () -> Unit,
     val switchTab: (AppRouteKey) -> Unit,
+    val layout: ChromeLayout,
 )
 
 class ScreenChrome(

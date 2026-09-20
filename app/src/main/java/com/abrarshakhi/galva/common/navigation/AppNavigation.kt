@@ -7,12 +7,18 @@ import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDe
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
+import com.abrarshakhi.galva.core.media.domain.model.MediaSource
+import com.abrarshakhi.galva.features.gallery.presentation.GalleryScreen
 
 @Composable
 fun AppNavigation(
     backStack: SnapshotStateList<AppRouteKey>,
     modifier: Modifier = Modifier,
 ) {
+    val openViewer: (MediaSource, Long) -> Unit = { source, mediaId ->
+        backStack.navigateTo(AppRouteKey.Viewer(source, mediaId))
+    }
+
     NavDisplay(
         backStack = backStack,
         modifier = modifier,
@@ -21,6 +27,9 @@ fun AppNavigation(
             rememberSaveableStateHolderNavEntryDecorator(),
             rememberViewModelStoreNavEntryDecorator(),
         ),
-        entryProvider = entryProvider {},
-    )
+        entryProvider = entryProvider {
+            entry<AppRouteKey.Gallery> {
+                GalleryScreen(onOpenViewer = openViewer)
+            }
+        })
 }

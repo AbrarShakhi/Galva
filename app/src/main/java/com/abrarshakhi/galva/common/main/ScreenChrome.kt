@@ -5,6 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import com.abrarshakhi.galva.common.navigation.AppRouteKey
 import com.abrarshakhi.galva.common.ui.util.ChromeLayout
+import com.abrarshakhi.galva.features.gallery.presentation.galleryChrome
 
 data class ChromeScope(
     val backStack: SnapshotStateList<AppRouteKey>,
@@ -23,7 +24,8 @@ class ScreenChrome(
 )
 
 fun AppRouteKey.chrome(): ScreenChrome = when (this) {
-    AppRouteKey.Gallery -> ScreenChrome()
-    AppRouteKey.Albums -> ScreenChrome()
-    AppRouteKey.Search -> ScreenChrome()
+    is AppRouteKey.Gallery -> galleryChrome()
+    is AppRouteKey.Albums -> ScreenChrome()
+    is AppRouteKey.Search -> ScreenChrome()
+    is AppRouteKey.Viewer -> ScreenChrome()
 }

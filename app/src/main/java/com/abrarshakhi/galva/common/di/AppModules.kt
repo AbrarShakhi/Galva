@@ -1,5 +1,23 @@
 package com.abrarshakhi.galva.common.di
 
-import org.koin.core.module.Module
+import com.abrarshakhi.galva.common.main.MainAppViewModel
+import com.abrarshakhi.galva.common.ui.snackbar.SnackbarDispatcher
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
+import org.koin.core.module.dsl.viewModel
+import org.koin.dsl.module
 
-val appModules = emptyList<Module>()
+private val coreModule = module {
+    single<CoroutineDispatcher> { Dispatchers.IO }
+    single { SnackbarDispatcher() }
+}
+
+private val presentationModule = module {
+    viewModel {
+        MainAppViewModel()
+    }
+}
+
+val appModules = listOf(
+    coreModule, presentationModule
+)

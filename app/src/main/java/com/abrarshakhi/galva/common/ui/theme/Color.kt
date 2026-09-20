@@ -1,4 +1,4 @@
-package com.abrarshakhi.galva.ui.theme
+package com.abrarshakhi.galva.common.ui.theme
 
 import androidx.compose.ui.graphics.Color
 

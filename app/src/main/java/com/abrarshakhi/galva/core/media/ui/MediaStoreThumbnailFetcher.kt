@@ -2,10 +2,7 @@ package com.abrarshakhi.galva.core.media.ui
 
 import android.content.ContentResolver
 import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.net.Uri
-import android.os.CancellationSignal
 import android.util.Size
 import coil3.ImageLoader
 import coil3.asImage
@@ -16,7 +13,7 @@ import coil3.fetch.ImageFetchResult
 import coil3.request.Options
 import coil3.size.pxOrElse
 import coil3.toAndroidUri
-import kotlinx.coroutines.CancellationException
+import com.abrarshakhi.galva.core.media.data.mediastore.MediaStoreThumbnails
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlin.math.max
@@ -42,46 +39,15 @@ class MediaStoreThumbnailFetcher(
         val height = options.size.height.pxOrElse { DEFAULT_THUMBNAIL_PX }
         val requested = Size(max(width, MIN_PX), max(height, MIN_PX))
 
-        val bitmap = loadMediaStoreThumbnail(requested) ?: decodeSubsampled(requested)
+        val resolver = context.contentResolver
+        val bitmap = MediaStoreThumbnails.cached(resolver, uri, requested)
+            ?: MediaStoreThumbnails.decodeSubsampled(resolver, uri, requested)
+            ?: throw IllegalStateException("Cannot open $uri")
         ImageFetchResult(
             image = bitmap.asImage(),
             isSampled = true,
             dataSource = DataSource.DISK,
         )
-    }
-
-    private fun loadMediaStoreThumbnail(size: Size): Bitmap? = try {
-        context.contentResolver.loadThumbnail(uri, size, CancellationSignal())
-    } catch (cancellation: CancellationException) {
-        throw cancellation
-    } catch (error: Exception) {
-        // Some OEM providers refuse loadThumbnail for particular items; fall back rather than
-        // leaving a hole in the grid.
-        null
-    }
-
-    /** Last resort: decode the original with the coarsest sample size that still fills [size]. */
-    private fun decodeSubsampled(size: Size): Bitmap {
-        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-        context.contentResolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, bounds) }
-
-        val decode = BitmapFactory.Options().apply {
-            inSampleSize = sampleSizeFor(bounds.outWidth, bounds.outHeight, size)
-        }
-        return context.contentResolver.openInputStream(uri)
-            ?.use { BitmapFactory.decodeStream(it, null, decode) }
-            ?: throw IllegalStateException("Cannot open $uri")
-    }
-
-    private fun sampleSizeFor(sourceWidth: Int, sourceHeight: Int, target: Size): Int {
-        if (sourceWidth <= 0 || sourceHeight <= 0) return 1
-        var sampleSize = 1
-        while (sourceWidth / (sampleSize * 2) >= target.width &&
-            sourceHeight / (sampleSize * 2) >= target.height
-        ) {
-            sampleSize *= 2
-        }
-        return sampleSize
     }
 
     class Factory(private val context: Context) : Fetcher.Factory<coil3.Uri> {

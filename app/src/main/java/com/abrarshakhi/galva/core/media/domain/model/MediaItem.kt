@@ -6,6 +6,10 @@ package com.abrarshakhi.galva.core.media.domain.model
  * [uri] is the string form of a MediaStore content URI. It is kept as a String so the domain layer
  * stays free of Android types; the UI parses it back into a `Uri` when handing it to Coil, Media3
  * or an Intent.
+ *
+ * The Secrets screens also use this type, to reuse the shared grid and viewer, with a
+ * `galva-vault://` [uri] (see `VaultUri`) that only the vault's own fetcher and data source
+ * resolve. Such items must never reach share or MediaStore delete.
  */
 data class MediaItem(
     val id: Long,

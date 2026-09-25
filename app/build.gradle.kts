@@ -55,6 +55,10 @@ dependencies {
     implementation(libs.media3.exoplayer)
     implementation(libs.media3.ui.compose)
     implementation(libs.androidx.compose.material.icons.extended)
+
+    implementation(libs.tink.android)
+    implementation(libs.argon2kt)
+    implementation(libs.kotlinx.serialization.protobuf)
 }
 
 android {

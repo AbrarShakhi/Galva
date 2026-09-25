@@ -2,8 +2,11 @@ package com.abrarshakhi.galva.core.media.data.local.dao
 
 import androidx.room.Dao
 import androidx.room.Query
+import androidx.room.RawQuery
 import androidx.room.Transaction
 import androidx.room.Upsert
+import androidx.sqlite.db.SimpleSQLiteQuery
+import androidx.sqlite.db.SupportSQLiteQuery
 import com.abrarshakhi.galva.core.media.data.local.entity.MediaEntity
 import kotlinx.coroutines.flow.Flow
 
@@ -95,6 +98,14 @@ interface MediaDao {
     suspend fun deleteByIds(ids: List<Long>)
 
     /**
+     * Folds the write-ahead log into the database file and truncates it. secure_delete zeroes a
+     * deleted row in the database file, but older copies of its page can sit in the log until it
+     * is reset; this resets it. Pass [TRUNCATING_CHECKPOINT].
+     */
+    @RawQuery
+    fun checkpoint(query: SupportSQLiteQuery): WalCheckpoint?
+
+    /**
      * Applies one sync delta atomically so observers never see a half-reconciled index.
      * Both lists are chunked because SQLite caps the number of statement parameters.
      */
@@ -144,3 +155,12 @@ data class FavoritesSummary(
     val coverUri: String?,
     val lastModifiedMs: Long?,
 )
+
+/** The row `PRAGMA wal_checkpoint` reports. */
+data class WalCheckpoint(
+    val busy: Int,
+    val log: Int,
+    val checkpointed: Int,
+)
+
+val TRUNCATING_CHECKPOINT: SupportSQLiteQuery = SimpleSQLiteQuery("PRAGMA wal_checkpoint(TRUNCATE)")

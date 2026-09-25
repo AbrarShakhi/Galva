@@ -20,6 +20,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -49,6 +50,8 @@ import com.abrarshakhi.galva.common.ui.snackbar.SnackbarDispatcher
 import com.abrarshakhi.galva.core.media.domain.model.MediaSource
 import com.abrarshakhi.galva.core.media.ui.rememberMediaDeleteLauncher
 import com.abrarshakhi.galva.core.share.MediaSharing
+import com.abrarshakhi.galva.features.secrets.presentation.BlockingProgress
+import com.abrarshakhi.galva.features.secrets.presentation.VaultUnlockSheet
 import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
 import org.koin.core.parameter.parametersOf
@@ -77,6 +80,9 @@ fun ViewerScreen(
     val deleteLauncher = rememberMediaDeleteLauncher { confirmed, ids ->
         viewModel.onIntent(ViewerIntent.DeleteResolved(ids, confirmed))
     }
+    val moveLauncher = rememberMediaDeleteLauncher { confirmed, ids ->
+        viewModel.onIntent(ViewerIntent.MoveResolved(ids, confirmed))
+    }
 
     CollectEffects(viewModel.effects) { effect ->
         when (effect) {
@@ -85,11 +91,22 @@ fun ViewerScreen(
 
             is ViewerEffect.ConfirmDelete -> deleteLauncher.request(effect.ids, effect.uris)
 
+            is ViewerEffect.ConfirmMove -> moveLauncher.request(effect.ids, effect.uris)
+
             is ViewerEffect.ShowMessage -> snackbar.show(effect.text)
 
             ViewerEffect.Close -> onClose()
         }
     }
+
+    if (state.showVaultUnlock) {
+        VaultUnlockSheet(
+            onDismiss = { viewModel.onIntent(ViewerIntent.VaultUnlockDismissed) },
+            onUnlocked = { viewModel.onIntent(ViewerIntent.VaultUnlocked) },
+        )
+    }
+
+    state.moveProgress?.let { BlockingProgress(it.label) }
 
     Box(
         modifier = modifier
@@ -166,6 +183,7 @@ fun ViewerScreen(
                 onBack = onClose,
                 onFavorite = { viewModel.onIntent(ViewerIntent.FavoriteToggled) },
                 onShare = { viewModel.onIntent(ViewerIntent.ShareRequested) },
+                onMoveToSecrets = { viewModel.onIntent(ViewerIntent.MoveToSecretsRequested) },
                 onDelete = { viewModel.onIntent(ViewerIntent.DeleteRequested) },
             )
         }
@@ -180,6 +198,7 @@ private fun ViewerTopBar(
     onBack: () -> Unit,
     onFavorite: () -> Unit,
     onShare: () -> Unit,
+    onMoveToSecrets: () -> Unit,
     onDelete: () -> Unit,
 ) {
     TopAppBar(
@@ -200,6 +219,9 @@ private fun ViewerTopBar(
             }
             IconButton(onClick = onShare) {
                 Icon(Icons.Filled.Share, contentDescription = "Share")
+            }
+            IconButton(onClick = onMoveToSecrets) {
+                Icon(Icons.Filled.Lock, contentDescription = "Move to Secrets")
             }
             IconButton(onClick = onDelete) {
                 Icon(Icons.Filled.Delete, contentDescription = "Delete")

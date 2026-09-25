@@ -32,6 +32,8 @@ import com.abrarshakhi.galva.core.media.domain.model.MediaSource
 import com.abrarshakhi.galva.features.albums.presentation.AddToAlbumSheet
 import com.abrarshakhi.galva.core.media.ui.rememberMediaDeleteLauncher
 import com.abrarshakhi.galva.core.share.MediaSharing
+import com.abrarshakhi.galva.features.secrets.presentation.BlockingProgress
+import com.abrarshakhi.galva.features.secrets.presentation.VaultUnlockSheet
 import org.koin.compose.koinInject
 
 @Composable
@@ -47,6 +49,9 @@ fun SearchScreen(
     val deleteLauncher = rememberMediaDeleteLauncher { confirmed, ids ->
         viewModel.onIntent(SearchIntent.DeleteResolved(ids, confirmed))
     }
+    val moveLauncher = rememberMediaDeleteLauncher { confirmed, ids ->
+        viewModel.onIntent(SearchIntent.MoveResolved(ids, confirmed))
+    }
 
     CollectEffects(viewModel.effects) { effect ->
         when (effect) {
@@ -56,6 +61,8 @@ fun SearchScreen(
                 MediaSharing.chooserFor(effect.uris, effect.mimeTypes)?.let(context::startActivity)
 
             is SearchEffect.ConfirmDelete -> deleteLauncher.request(effect.ids, effect.uris)
+
+            is SearchEffect.ConfirmMove -> moveLauncher.request(effect.ids, effect.uris)
 
             is SearchEffect.ShowMessage -> snackbar.show(effect.text)
         }
@@ -72,6 +79,15 @@ fun SearchScreen(
             onAdded = { name -> viewModel.onIntent(SearchIntent.AddedToAlbum(name)) },
         )
     }
+
+    if (state.showVaultUnlock) {
+        VaultUnlockSheet(
+            onDismiss = { viewModel.onIntent(SearchIntent.VaultUnlockDismissed) },
+            onUnlocked = { viewModel.onIntent(SearchIntent.VaultUnlocked) },
+        )
+    }
+
+    state.moveProgress?.let { BlockingProgress(it.label) }
 
 
     Column(modifier = modifier.fillMaxSize()) {

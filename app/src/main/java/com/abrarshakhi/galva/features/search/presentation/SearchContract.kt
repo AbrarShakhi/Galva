@@ -8,6 +8,7 @@ import com.abrarshakhi.galva.core.media.domain.model.MediaFilter
 import com.abrarshakhi.galva.core.media.domain.model.MediaItem
 import com.abrarshakhi.galva.core.media.domain.model.MediaSource
 import com.abrarshakhi.galva.core.settings.domain.AppSettings
+import com.abrarshakhi.galva.features.secrets.presentation.MoveProgress
 
 data class SearchUiState(
     val query: String = "",
@@ -17,6 +18,8 @@ data class SearchUiState(
     val columns: Int = AppSettings.DEFAULT_COLUMNS,
     val showAddToAlbum: Boolean = false,
     val isSearching: Boolean = false,
+    val showVaultUnlock: Boolean = false,
+    val moveProgress: MoveProgress? = null,
 ) : UiState {
 
     /** A bare filter with no text is still a search — "all videos" is a useful query. */
@@ -56,6 +59,14 @@ sealed interface SearchIntent : UiIntent {
     data class AddedToAlbum(val albumName: String) : SearchIntent
 
     data class DeleteResolved(val ids: List<Long>, val confirmed: Boolean) : SearchIntent
+
+    data object MoveToSecretsSelection : SearchIntent
+
+    data object VaultUnlocked : SearchIntent
+
+    data object VaultUnlockDismissed : SearchIntent
+
+    data class MoveResolved(val ids: List<Long>, val confirmed: Boolean) : SearchIntent
 }
 
 sealed interface SearchEffect : UiEffect {
@@ -65,6 +76,8 @@ sealed interface SearchEffect : UiEffect {
     data class ShareItems(val uris: List<String>, val mimeTypes: List<String>) : SearchEffect
 
     data class ConfirmDelete(val ids: List<Long>, val uris: List<String>) : SearchEffect
+
+    data class ConfirmMove(val ids: List<Long>, val uris: List<String>) : SearchEffect
 
     data class ShowMessage(val text: String) : SearchEffect
 }

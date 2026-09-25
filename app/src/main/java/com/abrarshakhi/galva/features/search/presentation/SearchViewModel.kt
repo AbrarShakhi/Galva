@@ -10,6 +10,11 @@ import com.abrarshakhi.galva.core.media.domain.model.MediaSource
 import com.abrarshakhi.galva.core.media.domain.usecase.MediaSelectionActions
 import com.abrarshakhi.galva.core.media.domain.usecase.ObserveMediaUseCase
 import com.abrarshakhi.galva.core.settings.domain.SettingsRepository
+import com.abrarshakhi.galva.core.vault.domain.usecase.MoveStart
+import com.abrarshakhi.galva.core.vault.domain.usecase.MoveToSecretsActions
+import com.abrarshakhi.galva.features.secrets.presentation.MoveProgress
+import com.abrarshakhi.galva.features.secrets.presentation.SET_UP_SECRETS_FIRST
+import com.abrarshakhi.galva.features.secrets.presentation.movedMessage
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -35,6 +40,7 @@ class SearchViewModel(
     observeMedia: ObserveMediaUseCase,
     settingsRepository: SettingsRepository,
     private val selectionActions: MediaSelectionActions,
+    private val moveToSecrets: MoveToSecretsActions,
 ) : MviViewModel<SearchUiState, SearchIntent, SearchEffect>(SearchUiState()) {
 
     private val criteria = MutableStateFlow(SearchCriteria())
@@ -143,6 +149,39 @@ class SearchViewModel(
             }
 
                         is SearchIntent.DeleteResolved -> if (intent.confirmed) onDeleted(intent.ids) else Unit
+
+            SearchIntent.MoveToSecretsSelection -> moveSelectionToSecrets()
+
+            SearchIntent.VaultUnlocked -> {
+                setState { copy(showVaultUnlock = false) }
+                moveSelectionToSecrets()
+            }
+
+            SearchIntent.VaultUnlockDismissed -> setState { copy(showVaultUnlock = false) }
+
+            is SearchIntent.MoveResolved -> {
+                val moved = moveToSecrets.resolve(intent.confirmed)
+                setState { copy(selection = selection.cleared()) }
+                sendEffect(SearchEffect.ShowMessage(movedMessage(moved)))
+            }
+        }
+    }
+
+    private suspend fun moveSelectionToSecrets() {
+        val selected = selectedItems()
+        if (selected.isEmpty()) return
+        val start = moveToSecrets.blocker() ?: run {
+            setState { copy(moveProgress = MoveProgress(0, selected.size)) }
+            moveToSecrets.start(selected) { done ->
+                setState { copy(moveProgress = MoveProgress(done, selected.size)) }
+            }.also { setState { copy(moveProgress = null) } }
+        }
+        when (start) {
+            MoveStart.NeedsSetup -> sendEffect(SearchEffect.ShowMessage(SET_UP_SECRETS_FIRST))
+            MoveStart.NeedsUnlock -> setState { copy(showVaultUnlock = true) }
+            is MoveStart.Failed -> sendEffect(SearchEffect.ShowMessage(start.reason))
+            is MoveStart.NeedsConsent ->
+                sendEffect(SearchEffect.ConfirmMove(start.originalIds, start.originalUris))
         }
     }
 

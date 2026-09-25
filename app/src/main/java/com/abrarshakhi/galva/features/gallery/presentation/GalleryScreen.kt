@@ -23,6 +23,8 @@ import com.abrarshakhi.galva.core.media.domain.model.MediaSource
 import com.abrarshakhi.galva.features.albums.presentation.AddToAlbumSheet
 import com.abrarshakhi.galva.core.media.ui.rememberMediaDeleteLauncher
 import com.abrarshakhi.galva.core.share.MediaSharing
+import com.abrarshakhi.galva.features.secrets.presentation.BlockingProgress
+import com.abrarshakhi.galva.features.secrets.presentation.VaultUnlockSheet
 import org.koin.compose.koinInject
 
 @Composable
@@ -38,6 +40,9 @@ fun GalleryScreen(
     val deleteLauncher = rememberMediaDeleteLauncher { confirmed, ids ->
         viewModel.onIntent(GalleryIntent.DeleteResolved(ids = ids, confirmed = confirmed))
     }
+    val moveLauncher = rememberMediaDeleteLauncher { confirmed, ids ->
+        viewModel.onIntent(GalleryIntent.MoveResolved(ids = ids, confirmed = confirmed))
+    }
 
     CollectEffects(viewModel.effects) { effect ->
         when (effect) {
@@ -48,6 +53,8 @@ fun GalleryScreen(
                     ?.let(context::startActivity)
 
             is GalleryEffect.ConfirmDelete -> deleteLauncher.request(effect.ids, effect.uris)
+
+            is GalleryEffect.ConfirmMove -> moveLauncher.request(effect.ids, effect.uris)
 
             is GalleryEffect.ShowMessage -> snackbar.show(effect.text)
         }
@@ -64,6 +71,15 @@ fun GalleryScreen(
             onAdded = { name -> viewModel.onIntent(GalleryIntent.AddedToAlbum(name)) },
         )
     }
+
+    if (state.showVaultUnlock) {
+        VaultUnlockSheet(
+            onDismiss = { viewModel.onIntent(GalleryIntent.VaultUnlockDismissed) },
+            onUnlocked = { viewModel.onIntent(GalleryIntent.VaultUnlocked) },
+        )
+    }
+
+    state.moveProgress?.let { BlockingProgress(it.label) }
 
 
     Box(modifier = modifier.fillMaxSize()) {

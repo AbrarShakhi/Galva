@@ -12,6 +12,11 @@ import com.abrarshakhi.galva.core.media.domain.usecase.MediaSelectionActions
 import com.abrarshakhi.galva.core.media.domain.usecase.ObserveTimelineUseCase
 import com.abrarshakhi.galva.core.media.domain.usecase.SyncMediaUseCase
 import com.abrarshakhi.galva.core.settings.domain.SettingsRepository
+import com.abrarshakhi.galva.core.vault.domain.usecase.MoveStart
+import com.abrarshakhi.galva.core.vault.domain.usecase.MoveToSecretsActions
+import com.abrarshakhi.galva.features.secrets.presentation.MoveProgress
+import com.abrarshakhi.galva.features.secrets.presentation.SET_UP_SECRETS_FIRST
+import com.abrarshakhi.galva.features.secrets.presentation.movedMessage
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
@@ -30,6 +35,7 @@ class GalleryViewModel(
     mediaRepository: MediaRepository,
     private val selectionActions: MediaSelectionActions,
     private val syncMedia: SyncMediaUseCase,
+    private val moveToSecrets: MoveToSecretsActions,
 ) : MviViewModel<GalleryUiState, GalleryIntent, GalleryEffect>(GalleryUiState()) {
 
     private val source = MediaSource.AllMedia
@@ -134,6 +140,39 @@ class GalleryViewModel(
             }
 
                         is GalleryIntent.DeleteResolved -> if (intent.confirmed) onDeleted(intent.ids) else Unit
+
+            GalleryIntent.MoveToSecretsSelection -> moveSelectionToSecrets()
+
+            GalleryIntent.VaultUnlocked -> {
+                setState { copy(showVaultUnlock = false) }
+                moveSelectionToSecrets()
+            }
+
+            GalleryIntent.VaultUnlockDismissed -> setState { copy(showVaultUnlock = false) }
+
+            is GalleryIntent.MoveResolved -> {
+                val moved = moveToSecrets.resolve(intent.confirmed)
+                setState { copy(selection = selection.cleared()) }
+                sendEffect(GalleryEffect.ShowMessage(movedMessage(moved)))
+            }
+        }
+    }
+
+    private suspend fun moveSelectionToSecrets() {
+        val selected = selectedItems()
+        if (selected.isEmpty()) return
+        val start = moveToSecrets.blocker() ?: run {
+            setState { copy(moveProgress = MoveProgress(0, selected.size)) }
+            moveToSecrets.start(selected) { done ->
+                setState { copy(moveProgress = MoveProgress(done, selected.size)) }
+            }.also { setState { copy(moveProgress = null) } }
+        }
+        when (start) {
+            MoveStart.NeedsSetup -> sendEffect(GalleryEffect.ShowMessage(SET_UP_SECRETS_FIRST))
+            MoveStart.NeedsUnlock -> setState { copy(showVaultUnlock = true) }
+            is MoveStart.Failed -> sendEffect(GalleryEffect.ShowMessage(start.reason))
+            is MoveStart.NeedsConsent ->
+                sendEffect(GalleryEffect.ConfirmMove(start.originalIds, start.originalUris))
         }
     }
 

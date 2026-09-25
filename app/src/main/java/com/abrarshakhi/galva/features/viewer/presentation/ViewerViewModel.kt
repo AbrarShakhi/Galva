@@ -7,6 +7,11 @@ import com.abrarshakhi.galva.core.media.domain.model.MediaItem
 import com.abrarshakhi.galva.core.media.domain.model.MediaSource
 import com.abrarshakhi.galva.core.media.domain.usecase.MediaSelectionActions
 import com.abrarshakhi.galva.core.media.domain.usecase.ObserveMediaUseCase
+import com.abrarshakhi.galva.core.vault.domain.usecase.MoveStart
+import com.abrarshakhi.galva.core.vault.domain.usecase.MoveToSecretsActions
+import com.abrarshakhi.galva.features.secrets.presentation.MoveProgress
+import com.abrarshakhi.galva.features.secrets.presentation.SET_UP_SECRETS_FIRST
+import com.abrarshakhi.galva.features.secrets.presentation.movedMessage
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -23,6 +28,7 @@ class ViewerViewModel(
     private val initialMediaId: Long,
     observeMedia: ObserveMediaUseCase,
     private val selectionActions: MediaSelectionActions,
+    private val moveToSecrets: MoveToSecretsActions,
 ) : MviViewModel<ViewerUiState, ViewerIntent, ViewerEffect>(ViewerUiState()) {
 
     /** Tracks the visible item across list updates; ids survive reordering, indices do not. */
@@ -84,19 +90,54 @@ class ViewerViewModel(
             }
 
             is ViewerIntent.DeleteResolved -> if (intent.confirmed) onDeleted(intent.ids) else Unit
+
+            ViewerIntent.MoveToSecretsRequested -> moveCurrentToSecrets()
+
+            ViewerIntent.VaultUnlocked -> {
+                setState { copy(showVaultUnlock = false) }
+                moveCurrentToSecrets()
+            }
+
+            ViewerIntent.VaultUnlockDismissed -> setState { copy(showVaultUnlock = false) }
+
+            is ViewerIntent.MoveResolved -> {
+                if (intent.confirmed) anchorPastRemoval(intent.ids)
+                val moved = moveToSecrets.resolve(intent.confirmed)
+                sendEffect(ViewerEffect.ShowMessage(movedMessage(moved)))
+            }
         }
     }
 
     private fun onDeleted(ids: List<Long>) {
-        // Re-anchor to the neighbour before the list update arrives, so the pager lands on the
-        // next photo instead of snapping back to the start.
+        anchorPastRemoval(ids)
+        viewModelScope.launch { selectionActions.confirmDeleted(ids) }
+    }
+
+    /**
+     * Re-anchors to the neighbour before the list update arrives, so the pager lands on the next
+     * photo instead of snapping back to the start.
+     */
+    private fun anchorPastRemoval(ids: List<Long>) {
         val items = currentState.items
         val removed = ids.toSet()
         val nextAnchor = items.drop(currentState.currentIndex + 1).firstOrNull { it.id !in removed }
             ?: items.take(currentState.currentIndex).lastOrNull { it.id !in removed }
         anchorId = nextAnchor?.id ?: NO_ANCHOR
+    }
 
-        viewModelScope.launch { selectionActions.confirmDeleted(ids) }
+    private suspend fun moveCurrentToSecrets() {
+        val item = currentState.current ?: return
+        val start = moveToSecrets.blocker() ?: run {
+            setState { copy(moveProgress = MoveProgress(0, 1)) }
+            moveToSecrets.start(listOf(item)).also { setState { copy(moveProgress = null) } }
+        }
+        when (start) {
+            MoveStart.NeedsSetup -> sendEffect(ViewerEffect.ShowMessage(SET_UP_SECRETS_FIRST))
+            MoveStart.NeedsUnlock -> setState { copy(showVaultUnlock = true) }
+            is MoveStart.Failed -> sendEffect(ViewerEffect.ShowMessage(start.reason))
+            is MoveStart.NeedsConsent ->
+                sendEffect(ViewerEffect.ConfirmMove(start.originalIds, start.originalUris))
+        }
     }
 
     private companion object {

@@ -63,6 +63,7 @@ fun galleryChrome(): ScreenChrome = ScreenChrome(
                 onFavorite = { viewModel.onIntent(GalleryIntent.FavoriteSelection) },
                 onAddToAlbum = { viewModel.onIntent(GalleryIntent.AddToAlbumRequested) },
                 onDelete = { viewModel.onIntent(GalleryIntent.DeleteSelection) },
+                onMoveToSecrets = { viewModel.onIntent(GalleryIntent.MoveToSecretsSelection) },
             )
         } else {
             AppTabs(

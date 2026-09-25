@@ -43,6 +43,8 @@ import com.abrarshakhi.galva.core.share.MediaSharing
 import com.abrarshakhi.galva.common.ui.selection.selectedBy
 import com.abrarshakhi.galva.common.ui.util.ChromeLayout
 import com.abrarshakhi.galva.common.ui.util.rememberChromeLayout
+import com.abrarshakhi.galva.features.secrets.presentation.BlockingProgress
+import com.abrarshakhi.galva.features.secrets.presentation.VaultUnlockSheet
 import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
 import org.koin.core.parameter.parametersOf
@@ -67,6 +69,9 @@ fun AlbumDetailScreen(
     val deleteLauncher = rememberMediaDeleteLauncher { confirmed, ids ->
         viewModel.onIntent(AlbumDetailIntent.DeleteResolved(ids, confirmed))
     }
+    val moveLauncher = rememberMediaDeleteLauncher { confirmed, ids ->
+        viewModel.onIntent(AlbumDetailIntent.MoveResolved(ids, confirmed))
+    }
 
     CollectEffects(viewModel.effects) { effect ->
         when (effect) {
@@ -76,6 +81,8 @@ fun AlbumDetailScreen(
                 MediaSharing.chooserFor(effect.uris, effect.mimeTypes)?.let(context::startActivity)
 
             is AlbumDetailEffect.ConfirmDelete -> deleteLauncher.request(effect.ids, effect.uris)
+
+            is AlbumDetailEffect.ConfirmMove -> moveLauncher.request(effect.ids, effect.uris)
 
             is AlbumDetailEffect.ShowMessage -> snackbar.show(effect.text)
 
@@ -113,6 +120,15 @@ fun AlbumDetailScreen(
         )
     }
 
+    if (state.showVaultUnlock) {
+        VaultUnlockSheet(
+            onDismiss = { viewModel.onIntent(AlbumDetailIntent.VaultUnlockDismissed) },
+            onUnlocked = { viewModel.onIntent(AlbumDetailIntent.VaultUnlocked) },
+        )
+    }
+
+    state.moveProgress?.let { BlockingProgress(it.label) }
+
 
     val layout = rememberChromeLayout()
     val selected = state.items.selectedBy(state.selection)
@@ -134,6 +150,7 @@ fun AlbumDetailScreen(
                     null
                 },
                 onDelete = { viewModel.onIntent(AlbumDetailIntent.DeleteSelection) },
+                onMoveToSecrets = { viewModel.onIntent(AlbumDetailIntent.MoveToSecretsSelection) },
             )
         }
 
@@ -195,6 +212,7 @@ fun AlbumDetailScreen(
                     null
                 },
                 onDelete = { viewModel.onIntent(AlbumDetailIntent.DeleteSelection) },
+                onMoveToSecrets = { viewModel.onIntent(AlbumDetailIntent.MoveToSecretsSelection) },
             )
         }
         }

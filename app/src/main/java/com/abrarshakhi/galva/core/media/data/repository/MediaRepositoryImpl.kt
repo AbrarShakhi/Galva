@@ -3,6 +3,7 @@ package com.abrarshakhi.galva.core.media.data.repository
 import com.abrarshakhi.galva.core.media.data.local.dao.FavoriteDao
 import com.abrarshakhi.galva.core.media.data.local.dao.MediaDao
 import com.abrarshakhi.galva.core.media.data.local.dao.MediaRow
+import com.abrarshakhi.galva.core.media.data.local.dao.TRUNCATING_CHECKPOINT
 import com.abrarshakhi.galva.core.media.data.local.dao.UserAlbumDao
 import com.abrarshakhi.galva.core.media.data.local.entity.FavoriteEntity
 import com.abrarshakhi.galva.core.media.data.mapper.toDomain
@@ -89,7 +90,11 @@ class MediaRepositoryImpl(
 
     override suspend fun forgetDeleted(ids: Collection<Long>) {
         if (ids.isEmpty()) return
-        withContext(dispatcher) { mediaDao.deleteByIds(ids.toList()) }
+        withContext(dispatcher) {
+            mediaDao.deleteByIds(ids.toList())
+            // Best effort: if the database is busy, the old log frames just live a little longer.
+            runCatching { mediaDao.checkpoint(TRUNCATING_CHECKPOINT) }
+        }
     }
 
     override val syncState: Flow<SyncState> get() = syncManager.state

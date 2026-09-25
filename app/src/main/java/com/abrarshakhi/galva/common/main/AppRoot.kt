@@ -32,21 +32,39 @@ import com.abrarshakhi.galva.common.ui.util.ChromeLayout
 import com.abrarshakhi.galva.common.ui.util.rememberChromeLayout
 import com.abrarshakhi.galva.common.ui.snackbar.SnackbarDispatcher
 import com.abrarshakhi.galva.features.settings.presentation.SettingsDrawerContent
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
+import coil3.SingletonImageLoader
+import com.abrarshakhi.galva.core.vault.domain.model.VaultState
+import com.abrarshakhi.galva.core.vault.domain.repository.VaultRepository
+import com.abrarshakhi.galva.core.vault.ui.purgeVaultImages
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
 @Composable
 fun AppRoot(startRoute: AppRouteKey, mainAppViewModel: MainAppViewModel) {
+    VaultLifecycle()
     MediaPermissionGate(onAccessChanged = mainAppViewModel::onAccessChanged) {
         AppShell(startRoute = startRoute)
     }
 }
 
-/**
- * Owns the single Scaffold every screen shares: one drawer, one snackbar host, one scroll
- * behaviour. Screens contribute their bars through [ScreenChrome] rather than nesting Scaffolds,
- * which is what keeps the bottom bar from re-animating on every navigation.
- */
+@Composable
+private fun VaultLifecycle() {
+    val vault: VaultRepository = koinInject()
+    val context = LocalContext.current
+
+    LifecycleEventEffect(Lifecycle.Event.ON_STOP) { vault.lock() }
+    LifecycleEventEffect(Lifecycle.Event.ON_START) { vault.cancelPendingLock() }
+
+    LaunchedEffect(vault) {
+        vault.state.collect { state ->
+            if (state !is VaultState.Unlocked) SingletonImageLoader.get(context).purgeVaultImages()
+        }
+    }
+}
+
 @Composable
 private fun AppShell(startRoute: AppRouteKey) {
     val backStack = rememberAppBackStack(startRoute)

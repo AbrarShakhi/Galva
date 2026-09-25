@@ -65,6 +65,7 @@ fun searchChrome(): ScreenChrome = ScreenChrome(
                 onFavorite = { viewModel.onIntent(SearchIntent.FavoriteSelection) },
                 onAddToAlbum = { viewModel.onIntent(SearchIntent.AddToAlbumRequested) },
                 onDelete = { viewModel.onIntent(SearchIntent.DeleteSelection) },
+                onMoveToSecrets = { viewModel.onIntent(SearchIntent.MoveToSecretsSelection) },
             )
         } else {
             AppTabs(

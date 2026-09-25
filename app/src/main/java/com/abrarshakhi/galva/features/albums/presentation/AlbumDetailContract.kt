@@ -7,6 +7,7 @@ import com.abrarshakhi.galva.common.ui.selection.SelectionState
 import com.abrarshakhi.galva.core.media.domain.model.MediaItem
 import com.abrarshakhi.galva.core.media.domain.model.MediaSource
 import com.abrarshakhi.galva.core.settings.domain.AppSettings
+import com.abrarshakhi.galva.features.secrets.presentation.MoveProgress
 
 data class AlbumDetailUiState(
     val albumName: String = "",
@@ -19,6 +20,8 @@ data class AlbumDetailUiState(
     val showRenameDialog: Boolean = false,
     val showDeleteAlbumDialog: Boolean = false,
     val isLoading: Boolean = true,
+    val showVaultUnlock: Boolean = false,
+    val moveProgress: MoveProgress? = null,
 ) : UiState {
 
     val isEmpty: Boolean get() = !isLoading && items.isEmpty()
@@ -66,6 +69,14 @@ sealed interface AlbumDetailIntent : UiIntent {
     data object RemoveFromAlbum : AlbumDetailIntent
 
     data class DeleteResolved(val ids: List<Long>, val confirmed: Boolean) : AlbumDetailIntent
+
+    data object MoveToSecretsSelection : AlbumDetailIntent
+
+    data object VaultUnlocked : AlbumDetailIntent
+
+    data object VaultUnlockDismissed : AlbumDetailIntent
+
+    data class MoveResolved(val ids: List<Long>, val confirmed: Boolean) : AlbumDetailIntent
 }
 
 sealed interface AlbumDetailEffect : UiEffect {
@@ -75,6 +86,8 @@ sealed interface AlbumDetailEffect : UiEffect {
     data class ShareItems(val uris: List<String>, val mimeTypes: List<String>) : AlbumDetailEffect
 
     data class ConfirmDelete(val ids: List<Long>, val uris: List<String>) : AlbumDetailEffect
+
+    data class ConfirmMove(val ids: List<Long>, val uris: List<String>) : AlbumDetailEffect
 
     data class ShowMessage(val text: String) : AlbumDetailEffect
 

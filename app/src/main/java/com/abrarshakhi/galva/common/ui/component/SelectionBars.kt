@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.LibraryAdd
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.PlaylistRemove
 import androidx.compose.material.icons.filled.SelectAll
 import androidx.compose.material.icons.filled.Share
@@ -37,7 +38,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.abrarshakhi.galva.common.ui.util.ChromeLayout
 
-/** Contextual top bar shown in place of the screen's own while a selection is active. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SelectionTopBar(
@@ -66,7 +66,6 @@ fun SelectionTopBar(
     )
 }
 
-/** Back-titled top bar used by pushed screens that render their own chrome. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetailTopBar(
@@ -96,12 +95,6 @@ private fun selectionBarColors(): TopAppBarColors = TopAppBarDefaults.topAppBarC
     scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
 )
 
-/**
- * Replaces the tab navigation while a selection is active, taking whichever shape it had.
- *
- * Keeping the actions in the region the navigation just vacated means the layout does not reflow
- * when a selection starts — only the contents of that region change.
- */
 @Composable
 fun SelectionActions(
     layout: ChromeLayout,
@@ -112,87 +105,99 @@ fun SelectionActions(
     onAddToAlbum: () -> Unit,
     onDelete: () -> Unit,
     modifier: Modifier = Modifier,
-    /** Only meaningful inside a user-created album; omitted everywhere else. */
     onRemoveFromAlbum: (() -> Unit)? = null,
+    onMoveToSecrets: (() -> Unit)? = null,
 ) {
-    when (layout) {
-        ChromeLayout.BottomBar -> SelectionActionBar(
-            anySelected, allFavorite, onShare, onFavorite, onAddToAlbum, onRemoveFromAlbum,
-            onDelete, modifier,
+    SelectionActionsContainer(layout = layout, modifier = modifier) {
+        SelectionAction(
+            icon = Icons.Filled.Share,
+            label = "Share",
+            enabled = anySelected,
+            onClick = onShare,
         )
-
-        ChromeLayout.Rail -> SelectionActionRail(
-            anySelected, allFavorite, onShare, onFavorite, onAddToAlbum, onRemoveFromAlbum,
-            onDelete, modifier,
+        SelectionAction(
+            icon = if (allFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+            label = "Favorite",
+            enabled = anySelected,
+            onClick = onFavorite,
+        )
+        SelectionAction(
+            icon = Icons.Filled.LibraryAdd,
+            label = "Add to album",
+            enabled = anySelected,
+            onClick = onAddToAlbum,
+        )
+        if (onRemoveFromAlbum != null) {
+            SelectionAction(
+                icon = Icons.Filled.PlaylistRemove,
+                label = "Remove from album",
+                enabled = anySelected,
+                onClick = onRemoveFromAlbum,
+            )
+        }
+        if (onMoveToSecrets != null) {
+            SelectionAction(
+                icon = Icons.Filled.Lock,
+                label = "Move to Secrets",
+                enabled = anySelected,
+                onClick = onMoveToSecrets,
+            )
+        }
+        SelectionAction(
+            icon = Icons.Filled.Delete,
+            label = "Delete",
+            enabled = anySelected,
+            onClick = onDelete,
+            tint = MaterialTheme.colorScheme.error,
         )
     }
 }
 
 @Composable
-private fun SelectionActionBar(
-    anySelected: Boolean,
-    allFavorite: Boolean,
-    onShare: () -> Unit,
-    onFavorite: () -> Unit,
-    onAddToAlbum: () -> Unit,
-    onRemoveFromAlbum: (() -> Unit)?,
-    onDelete: () -> Unit,
+fun SelectionActionsContainer(
+    layout: ChromeLayout,
     modifier: Modifier = Modifier,
+    actions: @Composable () -> Unit,
 ) {
-    Surface(
-        modifier = modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surfaceContainer,
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .windowInsetsPadding(
-                    WindowInsets.safeDrawing.only(
-                        WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom,
-                    ),
-                )
-                .padding(vertical = 8.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly,
+    when (layout) {
+        ChromeLayout.BottomBar -> Surface(
+            modifier = modifier.fillMaxWidth(),
+            color = MaterialTheme.colorScheme.surfaceContainer,
         ) {
-            SelectionAction(
-                icon = Icons.Filled.Share,
-                label = "Share",
-                enabled = anySelected,
-                onClick = onShare,
-            )
-            SelectionAction(
-                icon = if (allFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
-                label = "Favorite",
-                enabled = anySelected,
-                onClick = onFavorite,
-            )
-            SelectionAction(
-                icon = Icons.Filled.LibraryAdd,
-                label = "Add to album",
-                enabled = anySelected,
-                onClick = onAddToAlbum,
-            )
-            if (onRemoveFromAlbum != null) {
-                SelectionAction(
-                    icon = Icons.Filled.PlaylistRemove,
-                    label = "Remove from album",
-                    enabled = anySelected,
-                    onClick = onRemoveFromAlbum,
-                )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .windowInsetsPadding(
+                        WindowInsets.safeDrawing.only(
+                            WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom,
+                        ),
+                    )
+                    .padding(vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+            ) {
+                actions()
             }
-            SelectionAction(
-                icon = Icons.Filled.Delete,
-                label = "Delete",
-                enabled = anySelected,
-                onClick = onDelete,
-                tint = MaterialTheme.colorScheme.error,
-            )
+        }
+
+        ChromeLayout.Rail -> Surface(
+            modifier = modifier.fillMaxHeight(),
+            color = MaterialTheme.colorScheme.surfaceContainer,
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .padding(horizontal = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                actions()
+            }
         }
     }
 }
 
 @Composable
-private fun SelectionAction(
+fun SelectionAction(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     label: String,
     enabled: Boolean,
@@ -201,64 +206,5 @@ private fun SelectionAction(
 ) {
     IconButton(onClick = onClick, enabled = enabled) {
         Icon(imageVector = icon, contentDescription = label, tint = tint)
-    }
-}
-
-@Composable
-private fun SelectionActionRail(
-    anySelected: Boolean,
-    allFavorite: Boolean,
-    onShare: () -> Unit,
-    onFavorite: () -> Unit,
-    onAddToAlbum: () -> Unit,
-    onRemoveFromAlbum: (() -> Unit)?,
-    onDelete: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Surface(
-        modifier = modifier.fillMaxHeight(),
-        color = MaterialTheme.colorScheme.surfaceContainer,
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxHeight()
-                .padding(horizontal = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            SelectionAction(
-                icon = Icons.Filled.Share,
-                label = "Share",
-                enabled = anySelected,
-                onClick = onShare,
-            )
-            SelectionAction(
-                icon = if (allFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
-                label = "Favorite",
-                enabled = anySelected,
-                onClick = onFavorite,
-            )
-            SelectionAction(
-                icon = Icons.Filled.LibraryAdd,
-                label = "Add to album",
-                enabled = anySelected,
-                onClick = onAddToAlbum,
-            )
-            if (onRemoveFromAlbum != null) {
-                SelectionAction(
-                    icon = Icons.Filled.PlaylistRemove,
-                    label = "Remove from album",
-                    enabled = anySelected,
-                    onClick = onRemoveFromAlbum,
-                )
-            }
-            SelectionAction(
-                icon = Icons.Filled.Delete,
-                label = "Delete",
-                enabled = anySelected,
-                onClick = onDelete,
-                tint = MaterialTheme.colorScheme.error,
-            )
-        }
     }
 }

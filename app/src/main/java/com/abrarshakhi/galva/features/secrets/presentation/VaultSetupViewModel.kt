@@ -5,13 +5,6 @@ import com.abrarshakhi.galva.core.vault.domain.model.RecoveryWords
 import com.abrarshakhi.galva.core.vault.domain.repository.VaultRepository
 import java.nio.CharBuffer
 
-/**
- * Walks through creating the vault: a passphrase, then the recovery phrase, then a check that the
- * phrase was really written down — the only moment it is ever shown.
- *
- * Nothing is stored until the last step. The passphrase is held as a [CharArray] so it can be
- * overwritten, and the phrase leaves this ViewModel's state as soon as the vault exists.
- */
 class VaultSetupViewModel(
     private val vault: VaultRepository,
 ) : MviViewModel<VaultSetupUiState, VaultSetupIntent, VaultSetupEffect>(VaultSetupUiState()) {
@@ -32,13 +25,18 @@ class VaultSetupViewModel(
                 passphrase = CharArray(intent.passphrase.length) { intent.passphrase[it] }
                 // Going back to change the passphrase keeps the phrase already on paper.
                 val words = currentState.recoveryWords.ifEmpty { vault.newRecoveryPhrase() }
-                setState { copy(step = SetupStep.RecoveryPhrase, recoveryWords = words, error = null) }
+                setState {
+                    copy(step = SetupStep.RecoveryPhrase, recoveryWords = words, error = null)
+                }
             }
 
             VaultSetupIntent.PhraseWrittenDown -> setState {
                 copy(
                     step = SetupStep.ConfirmPhrase,
-                    checkPositions = (0 until RecoveryWords.COUNT).shuffled().take(CHECKED_WORDS).sorted(),
+                    checkPositions = (0 until RecoveryWords.COUNT)
+                        .shuffled()
+                        .take(CHECKED_WORDS)
+                        .sorted(),
                     error = null,
                 )
             }
@@ -77,7 +75,8 @@ class VaultSetupViewModel(
             vault.setUp(CharBuffer.wrap(secret), state.recoveryWords)
         } catch (error: Exception) {
             // Kept, so trying again does not mean retyping everything.
-            setState { copy(isCreating = false, error = error.message ?: "Couldn't create Secrets") }
+            val reason = error.message ?: "Couldn't create Secrets"
+            setState { copy(isCreating = false, error = reason) }
             return
         }
         forgetPassphrase()

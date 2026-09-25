@@ -8,10 +8,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.input.rememberTextFieldState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material3.AlertDialog
@@ -37,12 +34,6 @@ import com.abrarshakhi.galva.core.media.ui.rememberMediaDeleteLauncher
 import com.abrarshakhi.galva.core.vault.ui.SecureWindow
 import org.koin.compose.koinInject
 
-/**
- * The Secrets tab: setup, unlock, or the vault's contents, depending on the vault's state.
- *
- * The whole tab is kept out of screenshots and the Recents preview, locked or not, so there is no
- * moment between unlocking and the flag going on.
- */
 @Composable
 fun SecretsScreen(
     onOpenViewer: (secretId: Long) -> Unit,

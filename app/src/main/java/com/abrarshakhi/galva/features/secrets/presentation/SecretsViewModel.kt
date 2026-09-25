@@ -13,12 +13,6 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 
-/**
- * Drives the Secrets tab.
- *
- * Its whole state follows the vault's: when the vault locks, everything that came out of it — the
- * item list, the selection, any dialog — is dropped here too.
- */
 class SecretsViewModel(
     private val vault: VaultRepository,
     settingsRepository: SettingsRepository,
@@ -37,21 +31,23 @@ class SecretsViewModel(
             .launchIn(viewModelScope)
     }
 
-    private fun SecretsUiState.following(vaultState: VaultState): SecretsUiState = when (vaultState) {
-        VaultState.NotSetUp -> SecretsUiState(phase = SecretsPhase.NotSetUp, columns = columns)
-        VaultState.Locked -> SecretsUiState(phase = SecretsPhase.Locked, columns = columns)
-        is VaultState.Unlocked -> {
-            val items = vaultState.items.map(SecretItem::toGridItem)
-            val available = items.mapTo(HashSet(items.size), MediaItem::id)
-            copy(
-                phase = if (vaultState.needsNewPassphrase) SecretsPhase.NeedsNewPassphrase
-                else SecretsPhase.Unlocked,
-                items = items,
-                pendingMoves = vaultState.items.filter { it.pendingOriginal != null },
-                selection = selection.copy(selectedIds = selection.selectedIds intersect available),
-            )
+    private fun SecretsUiState.following(vaultState: VaultState): SecretsUiState =
+        when (vaultState) {
+            VaultState.NotSetUp -> SecretsUiState(phase = SecretsPhase.NotSetUp, columns = columns)
+            VaultState.Locked -> SecretsUiState(phase = SecretsPhase.Locked, columns = columns)
+            is VaultState.Unlocked -> {
+                val items = vaultState.items.map(SecretItem::toGridItem)
+                val available = items.mapTo(HashSet(items.size), MediaItem::id)
+                val stillSelected = selection.selectedIds intersect available
+                copy(
+                    phase = if (vaultState.needsNewPassphrase) SecretsPhase.NeedsNewPassphrase
+                    else SecretsPhase.Unlocked,
+                    items = items,
+                    pendingMoves = vaultState.items.filter { it.pendingOriginal != null },
+                    selection = selection.copy(selectedIds = stillSelected),
+                )
+            }
         }
-    }
 
     override suspend fun reduce(intent: SecretsIntent) {
         when (intent) {

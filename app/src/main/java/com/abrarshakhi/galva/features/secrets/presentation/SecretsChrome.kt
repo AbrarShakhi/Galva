@@ -27,10 +27,6 @@ import com.abrarshakhi.galva.common.ui.component.SelectionAction
 import com.abrarshakhi.galva.common.ui.component.SelectionActionsContainer
 import com.abrarshakhi.galva.common.ui.component.SelectionTopBar
 
-/**
- * Chrome for the Secrets tab. A selection swaps both bars, as on the other tabs, but for the two
- * things that can leave the vault: back to the gallery, or gone for good.
- */
 fun secretsChrome(): ScreenChrome = ScreenChrome(
     topBar = { scope ->
         val viewModel: SecretsViewModel = appViewModel()
@@ -48,7 +44,9 @@ fun secretsChrome(): ScreenChrome = ScreenChrome(
             SecretsTopBar(
                 unlocked = state.phase == SecretsPhase.Unlocked,
                 onLock = { viewModel.onIntent(SecretsIntent.LockRequested) },
-                onChangePassphrase = { viewModel.onIntent(SecretsIntent.ChangePassphraseRequested) },
+                onChangePassphrase = {
+                    viewModel.onIntent(SecretsIntent.ChangePassphraseRequested)
+                },
                 scrollBehavior = scope.scrollBehavior,
             )
         }

@@ -27,11 +27,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.abrarshakhi.galva.common.ui.theme.GalvaDimens
 
-/**
- * The page the vault's full-screen steps are laid out on: setup, unlock and choosing a new
- * passphrase. It scrolls, because the keyboard takes half of a phone screen, and stays at a
- * readable width on tablets and in landscape.
- */
 @Composable
 fun SecretsForm(
     modifier: Modifier = Modifier,
@@ -53,10 +48,6 @@ fun SecretsForm(
     }
 }
 
-/**
- * Words typed in the clear so they can be checked, but with a password keyboard, so the keyboard
- * does not learn them into its suggestions.
- */
 @Composable
 fun RecoveryPhraseField(
     state: TextFieldState,
@@ -71,7 +62,8 @@ fun RecoveryPhraseField(
         modifier = modifier.fillMaxWidth(),
         enabled = enabled,
         label = { Text(label) },
-        lineLimits = if (singleLine) TextFieldLineLimits.SingleLine else TextFieldLineLimits.Default,
+        lineLimits = if (singleLine) TextFieldLineLimits.SingleLine
+        else TextFieldLineLimits.Default,
         keyboardOptions = KeyboardOptions(
             keyboardType = KeyboardType.Password,
             imeAction = imeAction,
@@ -92,7 +84,6 @@ fun ErrorText(error: String?) {
     }
 }
 
-/** A button that shows progress in place of its label while the vault works. */
 @Composable
 fun WorkingButton(
     label: String,

@@ -28,13 +28,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
-/**
- * Local, non-semantic search over file and folder names.
- *
- * The query is debounced before it reaches the database so that typing issues one query per pause
- * rather than one per keystroke, while the text field itself stays fully responsive because its
- * value is state, not a query result.
- */
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 class SearchViewModel(
     observeMedia: ObserveMediaUseCase,
@@ -170,18 +163,24 @@ class SearchViewModel(
     private suspend fun moveSelectionToSecrets() {
         val selected = selectedItems()
         if (selected.isEmpty()) return
-        val start = moveToSecrets.blocker() ?: run {
-            setState { copy(moveProgress = MoveProgress(0, selected.size)) }
-            moveToSecrets.start(selected) { done ->
-                setState { copy(moveProgress = MoveProgress(done, selected.size)) }
-            }.also { setState { copy(moveProgress = null) } }
-        }
+        val start = moveToSecrets.blocker() ?: encryptIntoSecrets(selected)
         when (start) {
             MoveStart.NeedsSetup -> sendEffect(SearchEffect.ShowMessage(SET_UP_SECRETS_FIRST))
             MoveStart.NeedsUnlock -> setState { copy(showVaultUnlock = true) }
             is MoveStart.Failed -> sendEffect(SearchEffect.ShowMessage(start.reason))
             is MoveStart.NeedsConsent ->
                 sendEffect(SearchEffect.ConfirmMove(start.originalIds, start.originalUris))
+        }
+    }
+
+    private suspend fun encryptIntoSecrets(items: List<MediaItem>): MoveStart {
+        setState { copy(moveProgress = MoveProgress(done = 0, total = items.size)) }
+        return try {
+            moveToSecrets.start(items) { done ->
+                setState { copy(moveProgress = MoveProgress(done, items.size)) }
+            }
+        } finally {
+            setState { copy(moveProgress = null) }
         }
     }
 

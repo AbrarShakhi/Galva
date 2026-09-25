@@ -8,20 +8,14 @@ import com.abrarshakhi.galva.core.vault.domain.usecase.RestoreSecretsUseCase
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 
-/**
- * Pages through the vault, re-anchored to the item on screen as the list changes — the same
- * approach as the gallery viewer.
- *
- * It follows the vault's state rather than holding its own copy, so the moment the vault locks —
- * the app went to the background, or the user locked it — the viewer closes.
- */
 class SecretViewerViewModel(
     initialId: Long,
     private val vault: VaultRepository,
     private val restoreSecrets: RestoreSecretsUseCase,
-) : MviViewModel<SecretViewerUiState, SecretViewerIntent, SecretViewerEffect>(SecretViewerUiState()) {
+) : MviViewModel<SecretViewerUiState, SecretViewerIntent, SecretViewerEffect>(
+    SecretViewerUiState(),
+) {
 
-    /** The visible item across list updates; ids survive reordering, indices do not. */
     private var anchorId: Long = initialId
 
     init {
@@ -78,7 +72,6 @@ class SecretViewerViewModel(
         }
     }
 
-    /** Moves the anchor to a neighbour first, so the pager lands there instead of the start. */
     private fun anchorPast(removedId: Long) {
         val items = currentState.items
         val index = currentState.currentIndex

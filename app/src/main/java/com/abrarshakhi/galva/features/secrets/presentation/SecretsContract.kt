@@ -12,24 +12,16 @@ enum class SecretsPhase {
     Loading,
     NotSetUp,
     Locked,
-
-    /** Opened with the recovery phrase; a new passphrase must be chosen before anything else. */
     NeedsNewPassphrase,
     Unlocked,
 }
 
-/**
- * Everything item-related is empty unless the vault is [SecretsPhase.Unlocked]: locking resets this
- * state, so no names or counts outlive the keys.
- */
 data class SecretsUiState(
     val phase: SecretsPhase = SecretsPhase.Loading,
     val items: List<MediaItem> = emptyList(),
-    /** Moved in, but their originals may still be in the gallery. */
     val pendingMoves: List<SecretItem> = emptyList(),
     val selection: SelectionState = SelectionState(),
     val columns: Int = AppSettings.DEFAULT_COLUMNS,
-    /** A blocking operation in progress, described for the user. */
     val work: String? = null,
     val confirmingDelete: Boolean = false,
     val changingPassphrase: Boolean = false,
@@ -72,7 +64,6 @@ sealed interface SecretsIntent : UiIntent {
         val confirmation: CharSequence,
     ) : SecretsIntent
 
-    /** After unlocking with the recovery phrase. */
     data class NewPassphraseSubmitted(
         val new: CharSequence,
         val confirmation: CharSequence,
@@ -82,15 +73,20 @@ sealed interface SecretsIntent : UiIntent {
 
     data object UndoPendingMoves : SecretsIntent
 
-    /** Reported back once the system delete dialog for the originals has been answered. */
-    data class PendingMovesResolved(val originalIds: List<Long>, val confirmed: Boolean) : SecretsIntent
+    data class PendingMovesResolved(
+        val originalIds: List<Long>,
+        val confirmed: Boolean,
+    ) : SecretsIntent
 }
 
 sealed interface SecretsEffect : UiEffect {
 
     data class OpenViewer(val secretId: Long) : SecretsEffect
 
-    data class ConfirmOriginalsDeletion(val originalIds: List<Long>, val uris: List<String>) : SecretsEffect
+    data class ConfirmOriginalsDeletion(
+        val originalIds: List<Long>,
+        val uris: List<String>,
+    ) : SecretsEffect
 
     data class ShowMessage(val text: String) : SecretsEffect
 }

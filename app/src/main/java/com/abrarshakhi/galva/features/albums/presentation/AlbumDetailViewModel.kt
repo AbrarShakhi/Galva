@@ -24,10 +24,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
-/**
- * One album's contents. Scoped to the navigation entry, so two albums opened in sequence do not
- * share a selection and the previous album's list is released when it is popped.
- */
 class AlbumDetailViewModel(
     private val albumRef: AlbumRef,
     observeMedia: ObserveMediaUseCase,
@@ -42,7 +38,6 @@ class AlbumDetailViewModel(
 
     private val source = MediaSource.Album(albumRef)
 
-    /** Non-null exactly when this album is one the app owns and can therefore be edited. */
     private val managedRef: AlbumRef.User? = albumRef as? AlbumRef.User
 
     init {
@@ -187,18 +182,24 @@ class AlbumDetailViewModel(
     private suspend fun moveSelectionToSecrets() {
         val selected = selectedItems()
         if (selected.isEmpty()) return
-        val start = moveToSecrets.blocker() ?: run {
-            setState { copy(moveProgress = MoveProgress(0, selected.size)) }
-            moveToSecrets.start(selected) { done ->
-                setState { copy(moveProgress = MoveProgress(done, selected.size)) }
-            }.also { setState { copy(moveProgress = null) } }
-        }
+        val start = moveToSecrets.blocker() ?: encryptIntoSecrets(selected)
         when (start) {
             MoveStart.NeedsSetup -> sendEffect(AlbumDetailEffect.ShowMessage(SET_UP_SECRETS_FIRST))
             MoveStart.NeedsUnlock -> setState { copy(showVaultUnlock = true) }
             is MoveStart.Failed -> sendEffect(AlbumDetailEffect.ShowMessage(start.reason))
             is MoveStart.NeedsConsent ->
                 sendEffect(AlbumDetailEffect.ConfirmMove(start.originalIds, start.originalUris))
+        }
+    }
+
+    private suspend fun encryptIntoSecrets(items: List<MediaItem>): MoveStart {
+        setState { copy(moveProgress = MoveProgress(done = 0, total = items.size)) }
+        return try {
+            moveToSecrets.start(items) { done ->
+                setState { copy(moveProgress = MoveProgress(done, items.size)) }
+            }
+        } finally {
+            setState { copy(moveProgress = null) }
         }
     }
 

@@ -16,13 +16,6 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
-/**
- * Pages through the same collection the user opened from.
- *
- * The list is re-observed rather than passed in, so favouriting or deleting from inside the viewer
- * is reflected immediately, and the position is re-anchored to the item the user is actually
- * looking at whenever the list changes underneath it.
- */
 class ViewerViewModel(
     private val source: MediaSource,
     private val initialMediaId: Long,
@@ -31,7 +24,6 @@ class ViewerViewModel(
     private val moveToSecrets: MoveToSecretsActions,
 ) : MviViewModel<ViewerUiState, ViewerIntent, ViewerEffect>(ViewerUiState()) {
 
-    /** Tracks the visible item across list updates; ids survive reordering, indices do not. */
     private var anchorId: Long = initialMediaId
 
     init {
@@ -113,10 +105,6 @@ class ViewerViewModel(
         viewModelScope.launch { selectionActions.confirmDeleted(ids) }
     }
 
-    /**
-     * Re-anchors to the neighbour before the list update arrives, so the pager lands on the next
-     * photo instead of snapping back to the start.
-     */
     private fun anchorPastRemoval(ids: List<Long>) {
         val items = currentState.items
         val removed = ids.toSet()
@@ -127,16 +115,22 @@ class ViewerViewModel(
 
     private suspend fun moveCurrentToSecrets() {
         val item = currentState.current ?: return
-        val start = moveToSecrets.blocker() ?: run {
-            setState { copy(moveProgress = MoveProgress(0, 1)) }
-            moveToSecrets.start(listOf(item)).also { setState { copy(moveProgress = null) } }
-        }
+        val start = moveToSecrets.blocker() ?: encryptIntoSecrets(item)
         when (start) {
             MoveStart.NeedsSetup -> sendEffect(ViewerEffect.ShowMessage(SET_UP_SECRETS_FIRST))
             MoveStart.NeedsUnlock -> setState { copy(showVaultUnlock = true) }
             is MoveStart.Failed -> sendEffect(ViewerEffect.ShowMessage(start.reason))
             is MoveStart.NeedsConsent ->
                 sendEffect(ViewerEffect.ConfirmMove(start.originalIds, start.originalUris))
+        }
+    }
+
+    private suspend fun encryptIntoSecrets(item: MediaItem): MoveStart {
+        setState { copy(moveProgress = MoveProgress(done = 0, total = 1)) }
+        return try {
+            moveToSecrets.start(listOf(item))
+        } finally {
+            setState { copy(moveProgress = null) }
         }
     }
 

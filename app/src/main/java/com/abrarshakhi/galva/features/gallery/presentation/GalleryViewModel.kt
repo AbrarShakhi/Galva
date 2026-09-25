@@ -22,13 +22,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
-/**
- * Drives the Home timeline.
- *
- * Nothing here queries on demand: the timeline, the column preference and the sync indicator are
- * three flows collected for the ViewModel's whole life, so the grid updates after a media scan or
- * a settings change without the screen asking for anything.
- */
 class GalleryViewModel(
     observeTimeline: ObserveTimelineUseCase,
     settingsRepository: SettingsRepository,
@@ -51,7 +44,6 @@ class GalleryViewModel(
                     copy(
                         sections = sections,
                         isLoading = false,
-                        // Prune ids that no longer exist, so a deleted item cannot stay selected.
                         selection = selection.copy(selectedIds = selection.selectedIds intersect available),
                     )
                 }
@@ -161,18 +153,24 @@ class GalleryViewModel(
     private suspend fun moveSelectionToSecrets() {
         val selected = selectedItems()
         if (selected.isEmpty()) return
-        val start = moveToSecrets.blocker() ?: run {
-            setState { copy(moveProgress = MoveProgress(0, selected.size)) }
-            moveToSecrets.start(selected) { done ->
-                setState { copy(moveProgress = MoveProgress(done, selected.size)) }
-            }.also { setState { copy(moveProgress = null) } }
-        }
+        val start = moveToSecrets.blocker() ?: encryptIntoSecrets(selected)
         when (start) {
             MoveStart.NeedsSetup -> sendEffect(GalleryEffect.ShowMessage(SET_UP_SECRETS_FIRST))
             MoveStart.NeedsUnlock -> setState { copy(showVaultUnlock = true) }
             is MoveStart.Failed -> sendEffect(GalleryEffect.ShowMessage(start.reason))
             is MoveStart.NeedsConsent ->
                 sendEffect(GalleryEffect.ConfirmMove(start.originalIds, start.originalUris))
+        }
+    }
+
+    private suspend fun encryptIntoSecrets(items: List<MediaItem>): MoveStart {
+        setState { copy(moveProgress = MoveProgress(done = 0, total = items.size)) }
+        return try {
+            moveToSecrets.start(items) { done ->
+                setState { copy(moveProgress = MoveProgress(done, items.size)) }
+            }
+        } finally {
+            setState { copy(moveProgress = null) }
         }
     }
 

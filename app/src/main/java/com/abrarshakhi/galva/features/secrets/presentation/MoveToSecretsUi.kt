@@ -15,10 +15,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 
-/**
- * Holds the screen while the vault works. Encrypting or restoring a long video takes a while, and
- * the selection it is working from must not change underneath it.
- */
 @Composable
 fun BlockingProgress(message: String) {
     Dialog(
@@ -41,14 +37,13 @@ fun BlockingProgress(message: String) {
     }
 }
 
-/** How far a move into Secrets has got, for the screens that start one. */
 data class MoveProgress(val done: Int, val total: Int) {
 
     val label: String
-        get() = if (total <= 1) "Encrypting…" else "Encrypting ${minOf(done + 1, total)} of $total…"
+        get() = if (total <= 1) "Encrypting…"
+        else "Encrypting ${minOf(done + 1, total)} of $total…"
 }
 
-/** Shown when "Move to Secrets" is used before the vault exists, or while it is mid-recovery. */
 const val SET_UP_SECRETS_FIRST = "Set up Secrets first — open the Secrets tab"
 
 fun movedMessage(moved: Int?): String =

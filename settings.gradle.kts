@@ -1,4 +1,5 @@
 pluginManagement {
+    includeBuild("build-logic")
     repositories {
         google {
             content {
@@ -23,4 +24,23 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "Galva"
+enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
+
 include(":app")
+
+include(":core:common")
+include(":core:model")
+include(":core:database")
+include(":core:mediastore")
+include(":core:data")
+include(":core:vault")
+include(":core:domain")
+include(":core:designsystem")
+include(":core:ui")
+
+include(":feature:gallery")
+include(":feature:albums")
+include(":feature:search")
+include(":feature:viewer")
+include(":feature:secrets")
+include(":feature:settings")
